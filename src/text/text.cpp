@@ -142,6 +142,82 @@ Text::~Text()
     }
 }
 
+static constexpr float kAutoWidthTextRightPadding = 2.0f;
+
+static float ComputeLineAdvanceWidth(const Paragraph& paragraph,
+                                     const GlyphLine& line)
+{
+    const GlyphRun& endRun = paragraph.runs[line.endRunIndex];
+    const GlyphRun& startRun = paragraph.runs[line.startRunIndex];
+    return endRun.xpos[line.endGlyphIndex] -
+           startRun.xpos[line.startGlyphIndex];
+}
+
+static float ComputeLineVisualWidth(const Paragraph& paragraph,
+                                    const GlyphLine& line)
+{
+    float maxRight = ComputeLineAdvanceWidth(paragraph, line);
+
+    GlyphRun ellipsisRun;
+    OrderedLine orderedLine(paragraph,
+                            line,
+                            maxRight,
+                            false,
+                            true,
+                            &ellipsisRun,
+                            0.0f);
+
+    const float contentOrigin = line.startX;
+    float curX = line.startX;
+    for (auto glyphItr : orderedLine)
+    {
+        const GlyphRun* run = std::get<0>(glyphItr);
+        const size_t glyphIndex = std::get<1>(glyphItr);
+        const Font* font = run->font.get();
+        const GlyphID glyphId = run->glyphs[glyphIndex];
+        const float advance = run->advances[glyphIndex];
+
+        if (!font->isColorGlyph(glyphId))
+        {
+            const Vec2D& offset = run->offsets[glyphIndex];
+            const float centerX = advance / 2.0f;
+            TransformComponents tc;
+            tc.scaleX(run->size);
+            tc.scaleY(run->size);
+            tc.x(-centerX);
+            Mat2D pathTransform = Mat2D::compose(tc);
+            pathTransform =
+                Mat2D::fromTranslate(curX + centerX + offset.x, offset.y) *
+                pathTransform;
+
+            RawPath path = font->getPath(glyphId);
+            path.transformInPlace(pathTransform);
+            const AABB glyphBounds = path.bounds();
+            if (!glyphBounds.isEmptyOrNaN())
+            {
+                maxRight = std::max(maxRight,
+                                    glyphBounds.right() - contentOrigin);
+            }
+        }
+
+        curX += advance;
+    }
+
+    return maxRight;
+}
+
+static float ComputeMeasuredLineWidth(const Paragraph& paragraph,
+                                      const GlyphLine& line,
+                                      bool addAutoWidthPadding)
+{
+    float width = ComputeLineVisualWidth(paragraph, line);
+    if (addAutoWidthPadding && !line.empty())
+    {
+        width += kAutoWidthTextRightPadding;
+    }
+    return width;
+}
+
 Vec2D Text::measureLayout(float width,
                           LayoutMeasureMode widthMode,
                           float height,
@@ -230,10 +306,10 @@ TextBoundsInfo Text::computeBoundsInfo()
         const Paragraph& paragraph = m_shape[paragraphIndex++];
         for (const GlyphLine& line : paragraphLines)
         {
-            const GlyphRun& endRun = paragraph.runs[line.endRunIndex];
-            const GlyphRun& startRun = paragraph.runs[line.startRunIndex];
-            float width = endRun.xpos[line.endGlyphIndex] -
-                          startRun.xpos[line.startGlyphIndex];
+            float width = ComputeMeasuredLineWidth(
+                paragraph,
+                line,
+                effectiveSizing() == TextSizing::autoWidth);
             if (width > maxWidth)
             {
                 maxWidth = width;
@@ -1084,10 +1160,10 @@ Vec2D Text::measure(Vec2D maxSize)
             const Paragraph& paragraph = shape[paragraphIndex++];
             for (const GlyphLine& line : paragraphLines)
             {
-                const GlyphRun& endRun = paragraph.runs[line.endRunIndex];
-                const GlyphRun& startRun = paragraph.runs[line.startRunIndex];
-                float width = endRun.xpos[line.endGlyphIndex] -
-                              startRun.xpos[line.startGlyphIndex];
+                float width = ComputeMeasuredLineWidth(
+                    paragraph,
+                    line,
+                    effectiveSizing() == TextSizing::autoWidth);
                 if (width > maxWidth)
                 {
                     maxWidth = width;
