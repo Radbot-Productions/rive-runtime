@@ -565,6 +565,16 @@ void LayoutComponent::syncStyle()
             }
         }
     }
+
+    if (realWidthScaleType != LayoutScaleType::fixed)
+    {
+        realWidthUnits = YGUnitAuto;
+    }
+    if (realHeightScaleType != LayoutScaleType::fixed)
+    {
+        realHeightUnits = YGUnitAuto;
+    }
+
     if (!std::isnan(m_forcedWidth))
     {
         ygStyle.dimensions()[YGDimensionWidth] =

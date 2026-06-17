@@ -943,6 +943,10 @@ void Text::update(ComponentDirt value)
         bool precomputeModifierCoverage = modifierRangesNeedShape();
         bool parentIsLayoutNotArtboard =
             parent()->is<LayoutComponent>() && !parent()->is<Artboard>();
+        bool layoutControlsTextWidth =
+            parentIsLayoutNotArtboard &&
+            m_layoutWidthScaleType != std::numeric_limits<uint8_t>::max() &&
+            m_layoutWidthScaleType != (uint8_t)LayoutScaleType::hug;
         if (precomputeModifierCoverage &&
             makeStyled(m_modifierStyledText, false))
         {
@@ -952,7 +956,7 @@ void Text::update(ComponentDirt value)
             m_modifierLines =
                 BreakLines(m_modifierShape,
                            (effectiveSizing() == TextSizing::autoWidth &&
-                            !parentIsLayoutNotArtboard)
+                            !layoutControlsTextWidth)
                                ? -1.0f
                                : effectiveWidth(),
                            align(),
@@ -977,7 +981,7 @@ void Text::update(ComponentDirt value)
 
             m_lines = BreakLines(m_shape,
                                  (effectiveSizing() == TextSizing::autoWidth &&
-                                  !parentIsLayoutNotArtboard)
+                                  !layoutControlsTextWidth)
                                      ? -1.0f
                                      : effectiveWidth(),
                                  align(),

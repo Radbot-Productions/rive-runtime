@@ -26,8 +26,16 @@ void ParametricPath::controlSize(Vec2D size,
                                  LayoutScaleType heightScaleType,
                                  LayoutDirection direction)
 {
-    width(size.x);
-    height(size.y);
+    const bool isClippingPath =
+        shape() != nullptr && shape()->isFlagged(PathFlags::clipping);
+    if (widthScaleType != LayoutScaleType::hug || isClippingPath)
+    {
+        width(size.x);
+    }
+    if (heightScaleType != LayoutScaleType::hug || isClippingPath)
+    {
+        height(size.y);
+    }
     markWorldTransformDirty();
     markPathDirty(false);
 }

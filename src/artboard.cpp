@@ -22,6 +22,7 @@
 #include "rive/importers/import_stack.hpp"
 #include "rive/importers/backboard_importer.hpp"
 #include "rive/layout_component.hpp"
+#include "rive/layout/layout_component_style.hpp"
 #include "rive/foreground_layout_drawable.hpp"
 #include "rive/nested_artboard.hpp"
 #include "rive/nested_artboard_leaf.hpp"
@@ -1304,7 +1305,22 @@ void Artboard::calculateLayout()
     }
     else
     {
-        calculateLayoutInternal(width(), height());
+        float availableWidth = width();
+        float availableHeight = height();
+#ifdef WITH_RIVE_LAYOUT
+        if (style() != nullptr)
+        {
+            if (style()->widthScaleType() == LayoutScaleType::hug)
+            {
+                availableWidth = NAN;
+            }
+            if (style()->heightScaleType() == LayoutScaleType::hug)
+            {
+                availableHeight = NAN;
+            }
+        }
+#endif
+        calculateLayoutInternal(availableWidth, availableHeight);
     }
 #endif
 }
