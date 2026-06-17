@@ -26,8 +26,14 @@ void ParametricPath::controlSize(Vec2D size,
                                  LayoutScaleType heightScaleType,
                                  LayoutDirection direction)
 {
-    width(size.x);
-    height(size.y);
+    if (widthScaleType != LayoutScaleType::hug)
+    {
+        width(size.x);
+    }
+    if (heightScaleType != LayoutScaleType::hug)
+    {
+        height(size.y);
+    }
     markWorldTransformDirty();
     markPathDirty(false);
 }

@@ -187,7 +187,7 @@ Vec2D Image::measureLayout(float width,
     switch (widthMode)
     {
         case LayoutMeasureMode::atMost:
-            measuredWidth = std::max(Image::width(), width);
+            measuredWidth = std::min(Image::width(), width);
             break;
         case LayoutMeasureMode::exactly:
             measuredWidth = width;
@@ -199,7 +199,7 @@ Vec2D Image::measureLayout(float width,
     switch (heightMode)
     {
         case LayoutMeasureMode::atMost:
-            measuredHeight = std::max(Image::height(), height);
+            measuredHeight = std::min(Image::height(), height);
             break;
         case LayoutMeasureMode::exactly:
             measuredHeight = height;
@@ -218,10 +218,14 @@ void Image::controlSize(Vec2D size,
 {
     // We store layout width/height because the image asset may not be available
     // yet (referenced images) and we have defer controlling its size
-    if (m_layoutWidth != size.x || m_layoutHeight != size.y)
+    const float layoutWidth =
+        widthScaleType == LayoutScaleType::hug ? Image::width() : size.x;
+    const float layoutHeight =
+        heightScaleType == LayoutScaleType::hug ? Image::height() : size.y;
+    if (m_layoutWidth != layoutWidth || m_layoutHeight != layoutHeight)
     {
-        m_layoutWidth = size.x;
-        m_layoutHeight = size.y;
+        m_layoutWidth = layoutWidth;
+        m_layoutHeight = layoutHeight;
 
         updateImageScale();
     }
