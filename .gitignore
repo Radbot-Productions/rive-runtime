@@ -54,8 +54,11 @@ dev/analysis_report
 
 # Build directories
 build/bin
+build/dependencies
 dev/test/build/bin
 rivinfo/build/macosx
+out
+renderer/dependencies
 
 # Skia dependencies
 skia/dependencies/skia_recorder
